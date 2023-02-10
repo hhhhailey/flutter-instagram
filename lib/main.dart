@@ -47,7 +47,7 @@ class _MyAppState extends State<MyApp> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: false,
-        title: Text('Instagram'),
+        title: Text('마이크로프로텍트'),
         actions: [
           IconButton(
             onPressed: () {},
@@ -88,26 +88,48 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   int _page = 1;
-  var isLoading = false;
+  bool _hasNextPage = true;
+  bool _isLoading = false;
+
   var scroll = ScrollController();
 
   getMoreData() async {
-    var res = await http
-        .get(Uri.parse('https://codingapple1.github.io/app/more${_page}.json'));
-    if (res.statusCode == 200) {
-      var result = jsonDecode(res.body);
-      _page++;
-      widget.addData(result);
-    } else {
-      print('피드가 더이상 존재하지 않습니다.');
-      final scaffold = ScaffoldMessenger.of(context);
-      scaffold.showSnackBar(SnackBar(
-        content: Text('피드가 존재하지않습니다.'),
-        action: SnackBarAction(
-          label: 'UNDO',
-          onPressed: scaffold.hideCurrentSnackBar,
-        ),
-      ));
+    if (_hasNextPage == true && _isLoading == false) {
+      try {
+        final res = await http.get(
+            Uri.parse('https://codingapple1.github.io/app/more${_page}.json'));
+        setState(() {
+          _isLoading = false;
+        });
+        if (res.statusCode == 200) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+        final result = jsonDecode(res.body);
+        _page++;
+        if (result.isNotEmpty) {
+          widget.addData(result);
+          setState(() {
+            _hasNextPage = true;
+          });
+        }
+      } catch (e) {
+        print(e);
+        setState(() {
+          _hasNextPage = false;
+        });
+        if (_hasNextPage == false) {
+          final scaffold = ScaffoldMessenger.of(context);
+          scaffold.showSnackBar(SnackBar(
+            content: Text('피드가 존재하지않습니다.'),
+            action: SnackBarAction(
+              label: 'UNDO',
+              onPressed: scaffold.hideCurrentSnackBar,
+            ),
+          ));
+        }
+      }
     }
   }
 
