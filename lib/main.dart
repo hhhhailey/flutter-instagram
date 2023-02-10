@@ -87,40 +87,27 @@ class HomeView extends StatefulWidget {
 }
 
 class _HomeViewState extends State<HomeView> {
-  int _page = 0;
-  bool _hasNextPage = true;
-  bool _isLoadMoreRunning = false;
+  int _page = 1;
   var isLoading = false;
   var scroll = ScrollController();
 
   getMoreData() async {
-    if (_hasNextPage == true && _isLoadMoreRunning == false) {
-      setState(() {
-        _isLoadMoreRunning = true;
-      });
-
-      setState(() {
-        _page++;
-      });
-
-      print(_page);
-
-      try {
-        var res = await http.get(
-            Uri.parse('https://codingapple1.github.io/app/more${_page}.json'));
-        var result = jsonDecode(res.body);
-        if (result.isNotEmpty) {
-          widget.addData(result);
-        } else {
-          setState(() {
-            _hasNextPage = false;
-          });
-        }
-      } catch (e) {
-        print('서버 통신 실패');
-      }
+    var res = await http
+        .get(Uri.parse('https://codingapple1.github.io/app/more${_page}.json'));
+    if (res.statusCode == 200) {
+      var result = jsonDecode(res.body);
+      _page++;
+      widget.addData(result);
     } else {
       print('피드가 더이상 존재하지 않습니다.');
+      final scaffold = ScaffoldMessenger.of(context);
+      scaffold.showSnackBar(SnackBar(
+        content: Text('피드가 존재하지않습니다.'),
+        action: SnackBarAction(
+          label: 'UNDO',
+          onPressed: scaffold.hideCurrentSnackBar,
+        ),
+      ));
     }
   }
 
@@ -153,9 +140,6 @@ class _HomeViewState extends State<HomeView> {
               ],
             );
           });
-    } else if (_hasNextPage == false) {
-      return ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('피드를 모두 로드했습니다.')));
     } else {
       return CircularProgressIndicator();
     }
