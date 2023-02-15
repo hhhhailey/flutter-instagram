@@ -88,12 +88,13 @@ class HomeView extends StatefulWidget {
 
 class _HomeViewState extends State<HomeView> {
   int _page = 1;
-  bool _hasNextPage = true;
-  bool _isLoading = false;
-  bool _isRequest = false;
+  bool _hasNextPage = true; // 다음페이지
+  bool _isLoading = false; // 로딩
+  bool _isRequest = false; // 서버 요청
 
-  var scroll = ScrollController();
+  var scroll = ScrollController(); // 스크롤 도구
 
+  // 더보기 요청 => 1. 요청중(true), 2. 로딩(true)
   getMoreData() async {
     setState(() {
       _isRequest = true;
@@ -106,28 +107,28 @@ class _HomeViewState extends State<HomeView> {
             Uri.parse('https://codingapple1.github.io/app/more${_page}.json'));
 
         if (res.statusCode == 200) {
-          //  요청 성공 => 1. 로딩 완료
+          //  요청 성공 => 1. 로딩 완료, 2. 요청 완료
           setState(() {
             _isLoading = false;
             _isRequest = false;
           });
-        } else {
-          print('서버 오류');
-        }
 
-        final result = jsonDecode(res.body);
-        _page++;
+          final result = jsonDecode(res.body);
+          _page++;
 
-        // 값이 있으면
-        if (result.isNotEmpty) {
-          widget.addData(result);
-          setState(() {
-            _hasNextPage = true;
-          });
+          // 요청도 성공했고 값도 있으면 => 다음페이지 있음
+          if (result.isNotEmpty) {
+            widget.addData(result);
+            setState(() {
+              _hasNextPage = true;
+            });
+          } else {
+            setState(() {
+              _hasNextPage = false;
+            });
+          }
         } else {
-          setState(() {
-            _hasNextPage = false;
-          });
+          throw Exception('서버 오류');
         }
       } catch (e) {
         print(e);
@@ -162,7 +163,7 @@ class _HomeViewState extends State<HomeView> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.data.isNotEmpty) {
+    if (!_isLoading) {
       return ListView.builder(
           itemCount: widget.data.length,
           controller: scroll,
