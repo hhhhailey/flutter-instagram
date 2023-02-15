@@ -90,28 +90,43 @@ class _HomeViewState extends State<HomeView> {
   int _page = 1;
   bool _hasNextPage = true;
   bool _isLoading = false;
+  bool _isRequest = false;
 
   var scroll = ScrollController();
 
   getMoreData() async {
-    if (_hasNextPage == true && _isLoading == false) {
+    setState(() {
+      _isRequest = true;
+    });
+
+    if (_hasNextPage == true && _isRequest == true && _isLoading == false) {
       try {
+        // 요청 날리기
         final res = await http.get(
             Uri.parse('https://codingapple1.github.io/app/more${_page}.json'));
-        setState(() {
-          _isLoading = false;
-        });
+
         if (res.statusCode == 200) {
+          //  요청 성공 => 1. 로딩 완료
           setState(() {
             _isLoading = false;
+            _isRequest = false;
           });
+        } else {
+          print('서버 오류');
         }
+
         final result = jsonDecode(res.body);
         _page++;
+
+        // 값이 있으면
         if (result.isNotEmpty) {
           widget.addData(result);
           setState(() {
             _hasNextPage = true;
+          });
+        } else {
+          setState(() {
+            _hasNextPage = false;
           });
         }
       } catch (e) {
