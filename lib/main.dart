@@ -1,9 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_instagram/page/upload.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/rendering.dart';
 // 위젯과 스타일
 import 'package:flutter_instagram/widget/post.dart';
+import 'package:image_picker/image_picker.dart';
 import 'style.dart' as style;
 
 void main() {
@@ -20,6 +24,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   int tab = 0;
   var data = [];
+  var userImage;
 
   getData() async {
     var result = await http
@@ -30,10 +35,20 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
-  addData(a) {
+  // 게시물 등록
+  insertPost(a) {
+    setState(() {
+      data.insert(0, a);
+    });
+  }
+
+  // 게시물 더보기
+  viewMorePost(a) {
     setState(() {
       data.add(a);
     });
+
+    print(data);
   }
 
   @override
@@ -50,13 +65,34 @@ class _MyAppState extends State<MyApp> {
         title: Text('마이크로프로텍트'),
         actions: [
           IconButton(
-            onPressed: () {},
+            onPressed: () async {
+              var picker = ImagePicker();
+              var image = await picker.pickImage(source: ImageSource.gallery);
+              if (image != null) {
+                print(image.name);
+                setState(() {
+                  userImage = File(image.path);
+                });
+              }
+
+              // ignore: use_build_context_synchronously
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (c) => Upload(
+                          userImage: userImage,
+                          insertPost: insertPost,
+                          data: data)));
+            },
             icon: Icon(Icons.add_box_outlined),
             iconSize: 30,
           )
         ],
       ),
-      body: [HomeView(data: data, addData: addData), Text('shop')][tab],
+      body: [
+        HomeView(data: data, viewMorePost: viewMorePost),
+        Text('shop')
+      ][tab],
       bottomNavigationBar: BottomNavigationBar(
         showSelectedLabels: false,
         showUnselectedLabels: false,
@@ -78,9 +114,9 @@ class _MyAppState extends State<MyApp> {
 
 // ------------- 커스텀 위젯 ------------- //
 class HomeView extends StatefulWidget {
-  const HomeView({super.key, this.data, this.addData});
+  const HomeView({super.key, this.data, this.viewMorePost});
   final data;
-  final addData;
+  final viewMorePost;
 
   @override
   State<HomeView> createState() => _HomeViewState();
@@ -118,7 +154,7 @@ class _HomeViewState extends State<HomeView> {
 
           // 요청도 성공했고 값도 있으면 => 다음페이지 있음
           if (result.isNotEmpty) {
-            widget.addData(result);
+            widget.viewMorePost(result);
             setState(() {
               _hasNextPage = true;
             });
@@ -171,7 +207,11 @@ class _HomeViewState extends State<HomeView> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Image.network(widget.data[i]['image']),
+                // (widget.data[i]['image'].toString().contains('http://') ||
+                //         widget.data[i]['image'].toString().contains('https://'))
+                widget.data[i]['image'].runtimeType == String
+                    ? Image.network(widget.data[i]['image'])
+                    : Image.file(widget.data[i]['image']),
                 Text('좋아요 ${widget.data[i]['likes'].toString()}'),
                 Text(widget.data[i]['user']),
                 Text(widget.data[i]['content']),
