@@ -1,17 +1,23 @@
 import 'dart:io';
-
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_instagram/page/upload.dart';
+import 'package:flutter_instagram/pages/profile.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter/rendering.dart';
-// 위젯과 스타일
-import 'package:flutter_instagram/widget/post.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'style.dart' as style;
+// 위젯과 스타일
+import 'package:flutter_instagram/pages/upload.dart';
+import 'package:flutter_instagram/widget/post.dart';
 
 void main() {
-  runApp(MaterialApp(theme: style.theme, home: MyApp()));
+  runApp(MultiProvider(providers: [
+    ChangeNotifierProvider(create: (c) => Store1()),
+    ChangeNotifierProvider(create: (c) => Store2()),
+  ], child: MaterialApp(theme: style.theme, home: MyApp())));
 }
 
 class MyApp extends StatefulWidget {
@@ -26,12 +32,13 @@ class _MyAppState extends State<MyApp> {
   var data = [];
   var userImage;
 
+  // 게시물 데이터 가져오기
   getData() async {
     var result = await http
         .get(Uri.parse('https://codingapple1.github.io/app/data.json'));
-    var result2 = jsonDecode(result.body);
+    var res = jsonDecode(result.body);
     setState(() {
-      data = result2;
+      data = res;
     });
   }
 
@@ -47,8 +54,6 @@ class _MyAppState extends State<MyApp> {
     setState(() {
       data.add(a);
     });
-
-    print(data);
   }
 
   @override
@@ -212,8 +217,25 @@ class _HomeViewState extends State<HomeView> {
                 widget.data[i]['image'].runtimeType == String
                     ? Image.network(widget.data[i]['image'])
                     : Image.file(widget.data[i]['image']),
+                GestureDetector(
+                  child: Text(widget.data[i]['user']),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      // MaterialPageRoute(builder: (c) => ProfileWidget()));
+                      CupertinoPageRoute(builder: (c) => ProfileWidget()),
+                      // PageRouteBuilder(
+                      //     pageBuilder: (c, a1, a2) => ProfileWidget(),
+                      //     transitionsBuilder: (c, a1, a2, child) =>
+                      //         FadeTransition(
+                      //           opacity: a1,
+                      //           child: child,
+                      //         ))
+                    );
+                  },
+                ),
                 Text('좋아요 ${widget.data[i]['likes'].toString()}'),
-                Text(widget.data[i]['user']),
+                Text(widget.data[i]['date']),
                 Text(widget.data[i]['content']),
               ],
             );
@@ -222,4 +244,45 @@ class _HomeViewState extends State<HomeView> {
       return CircularProgressIndicator();
     }
   }
+}
+
+// state 보관함 = store
+class Store1 extends ChangeNotifier {
+  // var name = 'john kim';
+  var friend = false;
+  var follower = 0;
+
+  // provider state로 get 요청하기
+  final PROFILE_LIST = 'https://codingapple1.github.io/app/profile.json';
+  var profileImage = [];
+
+  // state를 수정하고 싶다면 수정될 함수를 만들자!
+  getProfileImage() async {
+    var result = await http.get(Uri.parse(PROFILE_LIST));
+    var res = jsonDecode(result.body);
+
+    if (result.statusCode == 200) {
+      profileImage = res;
+      notifyListeners();
+    } else {
+      throw Exception('failed server error');
+    }
+
+    print(res);
+  }
+
+  changeFollower() {
+    if (friend == false) {
+      follower += 1;
+      friend = true;
+    } else {
+      follower -= 1;
+      friend = false;
+    }
+    notifyListeners();
+  }
+}
+
+class Store2 extends ChangeNotifier {
+  var name = 'han han';
 }
