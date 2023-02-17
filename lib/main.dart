@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_instagram/pages/profile.dart';
+import 'package:flutter_instagram/widget/notification/notification.component.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
@@ -59,15 +60,20 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    initNotification(context);
     getData();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => showNotification(),
+        child: Text('알람'),
+      ),
       appBar: AppBar(
         centerTitle: false,
-        title: Text('마이크로프로텍트'),
+        title: Text('home'),
         actions: [
           IconButton(
             onPressed: () async {
